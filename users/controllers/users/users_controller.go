@@ -2,6 +2,7 @@ package users
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/guiaramos/bookstore/users/domain/users"
@@ -27,7 +28,20 @@ func CreateUser(c *gin.Context) {
 }
 
 func GetUser(c *gin.Context) {
-	c.String(http.StatusNotImplemented, "Not Implemented")
+	userId, convErr := strconv.ParseInt(c.Param("user_id"), 10, 64)
+	if convErr != nil {
+		err := errors.NewBadRequestError("invalid user id")
+		c.JSON(err.Status, err)
+		return
+	}
+
+	user, err := services.GetUser(userId)
+	if err != nil {
+		c.JSON(err.Status, err)
+		return
+	}
+	c.JSON(http.StatusOK, user)
+
 }
 
 func FindUser(c *gin.Context) {
