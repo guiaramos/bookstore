@@ -2,9 +2,16 @@ package users
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/guiaramos/bookstore/users/datasources/mysql/users_db"
 	"github.com/guiaramos/bookstore/users/utils/date_utils"
 	"github.com/guiaramos/bookstore/users/utils/errors"
+)
+
+const (
+	indexUniqueEmail = "email_UNIQUE"
+	queryInsertUser  = "INSERT INTO users(first_name, last_name, email, date_created) VALUES(?,?,?,?);"
 )
 
 var (
@@ -27,17 +34,28 @@ func (u *User) Get() *errors.RestErr {
 }
 
 func (u *User) Save() *errors.RestErr {
-	c := usersDB[u.Id]
-	if c != nil {
-		if c.Email == u.Email {
-			return errors.NewBadRequestError(fmt.Sprintf("email %s already registered", u.Email))
-		}
-		return errors.NewBadRequestError(fmt.Sprintf("u %d already exists", u.Id))
+	stmt, err := users_db.Client.Prepare(queryInsertUser)
+	if err != nil {
+		return errors.NewInterServerError(err.Error())
 	}
+	defer stmt.Close()
 
 	u.DateCreated = date_utils.GetNowString()
 
-	usersDB[u.Id] = u
+	r, err := stmt.Exec(u.FirstName, u.LastName, u.Email, u.DateCreated)
+	if err != nil {
+		if strings.Contains(err.Error(), indexUniqueEmail) {
+			return errors.NewBadRequestError(fmt.Sprintf("email %s already exists", u.Email))
+		}
+		return errors.NewInterServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
+	}
+
+	userId, err := r.LastInsertId()
+	if err != nil {
+		return errors.NewInterServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
+	}
+
+	u.Id = userId
 
 	return nil
 }
