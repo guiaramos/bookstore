@@ -1,12 +1,10 @@
 package users
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/guiaramos/bookstore/users/datasources/mysql/users_db"
 	"github.com/guiaramos/bookstore/users/utils/date_utils"
 	"github.com/guiaramos/bookstore/users/utils/errors"
+	"github.com/guiaramos/bookstore/users/utils/mysql_utils"
 )
 
 const (
@@ -28,11 +26,8 @@ func (u *User) Get() *errors.RestErr {
 	defer stmt.Close()
 
 	result := stmt.QueryRow(u.Id)
-	if err := result.Scan(&u.Id, &u.FirstName, &u.LastName, &u.Email, &u.DateCreated); err != nil {
-		if strings.Contains(err.Error(), errorNoRow) {
-			return errors.NewNotFoundError(fmt.Sprintf("user %d not found", u.Id))
-		}
-		return errors.NewInterServerError(fmt.Sprintf("error when trying to get user %d: %s", u.Id, err.Error()))
+	if getErr := result.Scan(&u.Id, &u.FirstName, &u.LastName, &u.Email, &u.DateCreated); getErr != nil {
+		return mysql_utils.ParseError(getErr)
 	}
 
 	return nil
@@ -47,17 +42,15 @@ func (u *User) Save() *errors.RestErr {
 
 	u.DateCreated = date_utils.GetNowString()
 
-	r, err := stmt.Exec(u.FirstName, u.LastName, u.Email, u.DateCreated)
-	if err != nil {
-		if strings.Contains(err.Error(), indexUniqueEmail) {
-			return errors.NewBadRequestError(fmt.Sprintf("email %s already exists", u.Email))
-		}
-		return errors.NewInterServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
+	r, saveErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.DateCreated)
+
+	if saveErr != nil {
+		return mysql_utils.ParseError(saveErr)
 	}
 
 	userId, err := r.LastInsertId()
 	if err != nil {
-		return errors.NewInterServerError(fmt.Sprintf("error when trying to save user: %s", err.Error()))
+		return mysql_utils.ParseError(err)
 	}
 
 	u.Id = userId
