@@ -9,7 +9,8 @@ import (
 func mapUrls(r *gin.Engine) {
 	r.GET("/ping", ping.Ping)
 
-	r.GET("/users/:user_id", users.GetUser)
-	r.GET("/users/search", users.FindUser)
 	r.POST("/users", users.CreateUser)
+	r.GET("/users/:user_id", users.GetUser)
+	r.PUT("/users/:user_id", users.UpdateUser)
+	r.GET("/users/search", users.FindUser)
 }
