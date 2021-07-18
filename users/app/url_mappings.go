@@ -15,4 +15,5 @@ func mapUrls(r *gin.Engine) {
 	r.PATCH("/users/:user_id", users.Update)
 	r.GET("/users/search", users.Find)
 	r.DELETE("/users/:user_id", users.Delete)
+	r.GET("/internal/users/search", users.Search)
 }
