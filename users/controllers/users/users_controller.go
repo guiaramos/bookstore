@@ -10,7 +10,16 @@ import (
 	"github.com/guiaramos/bookstore/users/utils/errors"
 )
 
-func CreateUser(c *gin.Context) {
+func getUserId(userIdParam string) (int64, *errors.RestErr) {
+	userId, convErr := strconv.ParseInt(userIdParam, 10, 64)
+	if convErr != nil {
+		return 0, errors.NewBadRequestError("invalid user id")
+	}
+
+	return userId, nil
+}
+
+func Create(c *gin.Context) {
 	var user users.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		restErr := errors.NewBadRequestError("invalid json body")
@@ -27,12 +36,10 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, r)
 }
 
-func GetUser(c *gin.Context) {
-	userId, convErr := strconv.ParseInt(c.Param("user_id"), 10, 64)
-	if convErr != nil {
-		err := errors.NewBadRequestError("invalid user id")
-		c.JSON(err.Status, err)
-		return
+func Get(c *gin.Context) {
+	userId, idErr := getUserId(c.Param("user_id"))
+	if idErr != nil {
+		c.JSON(idErr.Status, idErr)
 	}
 
 	user, err := services.GetUser(userId)
@@ -44,16 +51,15 @@ func GetUser(c *gin.Context) {
 
 }
 
-func FindUser(c *gin.Context) {
+func Find(c *gin.Context) {
 	c.String(http.StatusNotImplemented, "Not Implemented")
 }
 
-func UpdateUser(c *gin.Context) {
-	userId, convErr := strconv.ParseInt(c.Param("user_id"), 10, 64)
-	if convErr != nil {
-		err := errors.NewBadRequestError("invalid user id")
-		c.JSON(err.Status, err)
-		return
+func Update(c *gin.Context) {
+
+	userId, idErr := getUserId(c.Param("user_id"))
+	if idErr != nil {
+		c.JSON(idErr.Status, idErr)
 	}
 
 	var user users.User
@@ -74,4 +80,16 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+func Delete(c *gin.Context) {
+	userId, idErr := getUserId(c.Param("user_id"))
+	if idErr != nil {
+		c.JSON(idErr.Status, idErr)
+	}
+	if err := services.DeleteUser(userId); err != nil {
+		c.JSON(err.Status, err)
+		return
+	}
+	c.JSON(http.StatusOK, map[string]string{"status": "deleted"})
 }
