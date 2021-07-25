@@ -15,5 +15,4 @@ func main() {
 	}
 
 	app.StartApplication()
-
 }
