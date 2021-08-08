@@ -14,11 +14,7 @@ var (
 
 // StartApplication function starts the application
 func StartApplication() {
-	session, dbErr := cassandra.GetSession()
-	if dbErr != nil {
-		panic(dbErr)
-	}
-	session.Close()
+	_ = cassandra.GetSession()
 
 	repo := db.NewDBRepository()
 	service := access_token.NewService(repo)

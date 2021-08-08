@@ -30,11 +30,7 @@ func NewDBRepository() DBRepository {
 
 // Create inserts a new access token to the database
 func (r *dbRepository) Create(at access_token.AccessToken) *errors.RestErr {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return errors.NewInterServerError(err.Error())
-	}
-	defer session.Close()
+	session := cassandra.GetSession()
 
 	if err := session.Query(queryCreateAccessToken, at.AccessToken, at.UserID, at.ClientID, at.Expires).Exec(); err != nil {
 		return errors.NewInterServerError(err.Error())
@@ -45,11 +41,7 @@ func (r *dbRepository) Create(at access_token.AccessToken) *errors.RestErr {
 
 // GetByID method gets an AccessToken by ID
 func (r dbRepository) GetByID(id string) (*access_token.AccessToken, *errors.RestErr) {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return nil, errors.NewInterServerError(err.Error())
-	}
-	defer session.Close()
+	session := cassandra.GetSession()
 
 	var result access_token.AccessToken
 	if err := session.Query(queryGetAccessToken, id).Scan(&result.AccessToken, &result.UserID, &result.ClientID, &result.Expires); err != nil {
@@ -64,11 +56,7 @@ func (r dbRepository) GetByID(id string) (*access_token.AccessToken, *errors.Res
 
 // UpdateExpirationTime updates the expiration time of an access token in the database
 func (r *dbRepository) UpdateExpirationTime(at access_token.AccessToken) *errors.RestErr {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return errors.NewInterServerError(err.Error())
-	}
-	defer session.Close()
+	session := cassandra.GetSession()
 
 	if err := session.Query(queryUpdateExpires, at.Expires, at.AccessToken).Exec(); err != nil {
 		return errors.NewInterServerError(err.Error())
